@@ -718,41 +718,28 @@ function loadInvoice() {
   
   showToast("Loading invoice...");
   
-  // Use JSONP approach to bypass CORS
-  const script = document.createElement('script');
-  const callbackName = 'loadCallback_' + Date.now();
-  
-  window[callbackName] = function(response) {
-    if (response === 'NOTFOUND') {
-      showToast("Invoice not found: " + invNo);
-      hideEditBanner();
-      loadedInvoiceNo = null;
-    } else if (response.startsWith('ERROR')) {
-      showToast("Error: " + response.split(':')[1]);
-    } else {
-      fillInvoiceData(response);
-      showToast("Invoice loaded: " + invNo);
-    }
-    delete window[callbackName];
-    if (script.parentNode) script.parentNode.removeChild(script);
-  };
-  
-  // Fallback timeout
-  setTimeout(() => {
-    if (window[callbackName]) {
-      showToast("Load timed out. Check connection.");
-      delete window[callbackName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-  }, 5000);
-  
-  script.src = SHEET_API_URL + '?invNo=' + encodeURIComponent(invNo) + '&callback=' + callbackName;
-  document.head.appendChild(script);
+  fetch(SHEET_API_URL + '?invNo=' + encodeURIComponent(invNo))
+    .then(res => res.json())
+    .then(response => {
+      if (response.status === 'notfound') {
+        showToast("Invoice not found: " + invNo);
+        hideEditBanner();
+        loadedInvoiceNo = null;
+      } else if (response.status === 'found') {
+        fillInvoiceData(response.data);
+        showToast("Invoice loaded: " + invNo);
+      } else {
+        showToast("Error: " + (response.message || 'Unknown'));
+      }
+    })
+    .catch(err => {
+      showToast("Failed to load. Check console.");
+      console.error(err);
+    });
 }
 
-function fillInvoiceData(pipeData) {
-  const parts = pipeData.split('|');
-  // parts: [0]=timestamp, [1]=invNo, [2]=custName, [3]=custGST, [4]=invDate, [5]=challanNo, [6]=poNo, [7]=transport, [8]=subTotal, [9]=taxType, [10]=gstRate, [11]=taxAmount, [12]=grandTotal, [13]=items
+function fillInvoiceData(parts) {
+  // parts is now an array: [timestamp, invNo, custName, custGST, invDate, challanNo, poNo, transport, subTotal, taxType, gstRate, taxAmount, grandTotal, items]
   
   document.getElementById('custName').value = parts[2] || '';
   document.getElementById('custGST').value = parts[3] || '';
@@ -761,7 +748,7 @@ function fillInvoiceData(pipeData) {
   document.getElementById('poNo').value = parts[6] || '';
   document.getElementById('transport').value = parts[7] || '';
   
-  // Parse items from text back to line items
+  // Parse items
   lineItems = [];
   itemCounter = 0;
   document.getElementById('lineItemsContainer').innerHTML = '';
@@ -769,7 +756,6 @@ function fillInvoiceData(pipeData) {
   if (parts[13]) {
     const itemTexts = parts[13].split(' | ');
     itemTexts.forEach(itemText => {
-      // Parse: "1. Description (HSN:code) Qty:2 @ Rs.100"
       const match = itemText.match(/^\d+\.\s+(.+?)\s+\(HSN:(.*?)\)\s+Qty:(\d+)\s+@ Rs\.([\d.]+)$/);
       if (match) {
         itemCounter++;
@@ -799,7 +785,6 @@ function fillInvoiceData(pipeData) {
   const gstRateMatch = (parts[10] || '18%').match(/(\d+)/);
   document.getElementById('gstRate').value = gstRateMatch ? gstRateMatch[1] : '18';
   
-  // Set additional charges (we can't recover them individually from subtotal, so leave as 0)
   document.getElementById('packingCharges').value = '0';
   document.getElementById('transportCharges').value = '0';
   
