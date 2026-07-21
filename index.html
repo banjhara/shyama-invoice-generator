@@ -701,11 +701,15 @@ function resetForm() {
   updatePreview();
   showToast('Form reset');
 }
+let toastTimer = null;
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 let loadedInvoiceNo = null;
 
@@ -787,9 +791,12 @@ function fillInvoiceData(parts) {
   document.getElementById('packingCharges').value = '0';
   document.getElementById('transportCharges').value = '0';
   
-    loadedInvoiceNo = parts[1];
+     loadedInvoiceNo = parts[1];
   showEditBanner(parts[1]);
-  setTimeout(updatePreview, 50);
+  // Wait for all DOM elements to settle before rendering preview
+  requestAnimationFrame(() => {
+    setTimeout(updatePreview, 100);
+  });
 }
 
 function showEditBanner(invNo) {
