@@ -427,9 +427,9 @@ function updatePreview() {
       </div>
     </div>
     <table class="meta-table">
-      <tr>
-        <td class="label"><strong>BILLED TO</strong></td>
-        <td class="value">
+            <tr>
+        <td class="label" rowspan="2"><strong>BILLED TO</strong></td>
+        <td class="value" rowspan="2">
           <strong>${custName || '_______________________'}</strong><br>
           ${custAddress || ''}<br>
           ${custGST ? `<strong>GST:</strong> ${custGST}` : ''}
@@ -438,10 +438,14 @@ function updatePreview() {
         <td class="value"><strong>${invNo || 'SE/____/___'}</strong></td>
       </tr>
       <tr>
+        <td class="label">Dated</td>
+        <td class="value">${fmtDate(invDate)}</td>
+      </tr>
+      <tr>
         <td class="label">SE Challan no.</td>
         <td class="value">${challanNo || ''}</td>
         <td class="label">Dated</td>
-        <td class="value">${fmtDate(invDate)}</td>
+        <td class="value">${fmtDate(challanDate)}</td>
       </tr>
       <tr>
         <td class="label">P.O. No.</td>
