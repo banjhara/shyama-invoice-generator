@@ -719,10 +719,8 @@ let loadedInvoiceNo = null;
 
 function loadInvoice() {
   const pass = prompt("Enter password to load invoice:");
-  if (pass !== "shyama2026") {
-    showToast("Wrong password");
-    return;
-  }
+  if (!pass) return;
+  
   const invNo = document.getElementById('invNo').value.trim();
   if (!invNo) {
     showToast("Please enter an Invoice Number first!");
@@ -731,9 +729,13 @@ function loadInvoice() {
   
   showToast("Loading invoice...");
   
-  fetch(SHEET_API_URL + '?invNo=' + encodeURIComponent(invNo))
+  fetch(SHEET_API_URL + '?invNo=' + encodeURIComponent(invNo) + '&pass=' + encodeURIComponent(pass))
     .then(res => res.json())
     .then(response => {
+      if (response.status === 'unauthorized') {
+        showToast("Wrong password");
+        return;
+      }
       if (response.status === 'notfound') {
         showToast("Invoice not found: " + invNo);
         hideEditBanner();
@@ -745,7 +747,7 @@ function loadInvoice() {
         showToast("Error: " + (response.message || 'Unknown'));
       }
     })
-        .catch(err => {
+    .catch(err => {
       console.error(err);
     });
 }
