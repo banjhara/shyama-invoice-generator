@@ -732,8 +732,7 @@ function loadInvoice() {
         showToast("Error: " + (response.message || 'Unknown'));
       }
     })
-    .catch(err => {
-      showToast("Failed to load. Check console.");
+        .catch(err => {
       console.error(err);
     });
 }
@@ -788,9 +787,9 @@ function fillInvoiceData(parts) {
   document.getElementById('packingCharges').value = '0';
   document.getElementById('transportCharges').value = '0';
   
-  loadedInvoiceNo = parts[1];
+    loadedInvoiceNo = parts[1];
   showEditBanner(parts[1]);
-  updatePreview();
+  setTimeout(updatePreview, 50);
 }
 
 function showEditBanner(invNo) {
