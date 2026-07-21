@@ -718,6 +718,11 @@ function showToast(msg) {
 let loadedInvoiceNo = null;
 
 function loadInvoice() {
+  const pass = prompt("Enter password to load invoice:");
+  if (pass !== "shyama2026") {
+    showToast("Wrong password");
+    return;
+  }
   const invNo = document.getElementById('invNo').value.trim();
   if (!invNo) {
     showToast("Please enter an Invoice Number first!");
