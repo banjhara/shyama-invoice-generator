@@ -555,7 +555,7 @@ function saveToSheet() {
   form.action = SHEET_API_URL;
   form.target = iframe.name;
   
-  const fields = {
+    const fields = {
     action: isEditingExisting ? 'update' : 'new',
     invNo: invNo,
     custName: custName,
@@ -569,7 +569,11 @@ function saveToSheet() {
     gstRate: gstRate + '%',
     taxAmount: taxAmount.toFixed(2),
     grandTotal: grandTotal.toFixed(2),
-    items: itemsText
+    items: itemsText,
+    custAddress: document.getElementById('custAddress').value,
+    challanDate: document.getElementById('challanDate').value,
+    poDate: document.getElementById('poDate').value,
+    customTerms: document.getElementById('customTerms').value
   };
   
   for (const [key, value] of Object.entries(fields)) {
@@ -761,6 +765,10 @@ function fillInvoiceData(parts) {
   document.getElementById('challanNo').value = parts[5] || '';
   document.getElementById('poNo').value = parts[6] || '';
   document.getElementById('transport').value = parts[7] || '';
+  document.getElementById('custAddress').value = parts[14] || '';
+  document.getElementById('challanDate').value = parts[15] ? parts[15].toString().split('T')[0] : '';
+  document.getElementById('poDate').value = parts[16] ? parts[16].toString().split('T')[0] : '';
+  document.getElementById('customTerms').value = parts[17] || '';
   
   // Parse items
   lineItems = [];
