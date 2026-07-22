@@ -521,7 +521,6 @@ function saveToSheet() {
     return;
   }
   
-  // Check if we're editing an existing invoice but changed the number
   const isEditingExisting = loadedInvoiceNo && loadedInvoiceNo === invNo;
   const isCloning = loadedInvoiceNo && loadedInvoiceNo !== invNo;
   
@@ -551,61 +550,50 @@ function saveToSheet() {
   
   showToast("Saving to Google Sheet...");
   
-  const iframe = document.createElement('iframe');
-  iframe.name = 'sheetSubmit_' + Date.now();
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
+  const formData = new URLSearchParams();
+  formData.append('action', isEditingExisting ? 'update' : 'new');
+  formData.append('sheet', 'Invoices');
+  formData.append('invNo', invNo);
+  formData.append('custName', custName);
+  formData.append('custGST', document.getElementById('custGST').value);
+  formData.append('invDate', document.getElementById('invDate').value);
+  formData.append('challanNo', document.getElementById('challanNo').value);
+  formData.append('poNo', document.getElementById('poNo').value);
+  formData.append('transport', document.getElementById('transport').value);
+  formData.append('subTotal', subTotal.toFixed(2));
+  formData.append('taxType', taxType.toUpperCase());
+  formData.append('gstRate', gstRate + '%');
+  formData.append('taxAmount', taxAmount.toFixed(2));
+  formData.append('grandTotal', grandTotal.toFixed(2));
+  formData.append('items', itemsText);
+  formData.append('custAddress', document.getElementById('custAddress').value);
+  formData.append('challanDate', document.getElementById('challanDate').value);
+  formData.append('poDate', document.getElementById('poDate').value);
+  formData.append('customTerms', document.getElementById('customTerms').value);
   
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = SHEET_API_URL;
-  form.target = iframe.name;
-  
-    const fields = {
-    action: isEditingExisting ? 'update' : 'new',
-    invNo: invNo,
-    custName: custName,
-    custGST: document.getElementById('custGST').value,
-    invDate: document.getElementById('invDate').value,
-    challanNo: document.getElementById('challanNo').value,
-    poNo: document.getElementById('poNo').value,
-    transport: document.getElementById('transport').value,
-    subTotal: subTotal.toFixed(2),
-    taxType: taxType.toUpperCase(),
-    gstRate: gstRate + '%',
-    taxAmount: taxAmount.toFixed(2),
-    grandTotal: grandTotal.toFixed(2),
-    items: itemsText,
-    custAddress: document.getElementById('custAddress').value,
-    challanDate: document.getElementById('challanDate').value,
-    poDate: document.getElementById('poDate').value,
-    customTerms: document.getElementById('customTerms').value
-  };
-  
-  for (const [key, value] of Object.entries(fields)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = value;
-    form.appendChild(input);
-  }
-  
-  document.body.appendChild(form);
-  form.submit();
-  
-  setTimeout(() => {
-    if (isEditingExisting) {
-      showToast("Invoice updated successfully!");
+  fetch(SHEET_API_URL, {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      if (isEditingExisting) {
+        showToast("Invoice updated successfully!");
+      } else {
+        showToast("New invoice saved to Google Sheet!");
+        loadedInvoiceNo = invNo;
+        showEditBanner(invNo);
+      }
     } else {
-      showToast("New invoice saved to Google Sheet!");
-      loadedInvoiceNo = invNo; // Now this is the loaded invoice
-      showEditBanner(invNo);
+      showToast("Error: " + (data.message || 'Unknown'));
     }
-    document.body.removeChild(form);
-    document.body.removeChild(iframe);
-  }, 1500);
+  })
+  .catch(err => {
+    showToast("Failed to save. Check console.");
+    console.error(err);
+  });
 }
-
 function downloadPDF(copyType) {
   const stampText = {
     original: 'TAX INVOICE — ORIGINAL',
