@@ -140,7 +140,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <button class="btn btn-primary" onclick="saveToSheet()" style="background:#34a853;">Save to Sheet</button>
   <button class="btn btn-primary" onclick="downloadPDF('original')">Original</button>
   <button class="btn btn-primary" onclick="downloadPDF('duplicate')">Duplicate</button>
-  <button class="btn btn-primary" onclick="downloadPDF('supplier')">Supplier Copy</button>
+  <button class="btn btn-primary" onclick="downloadPDF('triplicate')">Triplicate</button>
 </div>
 </header>
 <div class="app-container">
@@ -610,7 +610,7 @@ function downloadPDF(copyType) {
   const stampText = {
     original: 'TAX INVOICE — ORIGINAL',
     duplicate: 'TAX INVOICE — DUPLICATE',
-    supplier: 'TAX INVOICE — SUPPLIER COPY'
+    triplicate: 'TAX INVOICE — TRIPLICATE'
   }[copyType] || '';
   
   const stampEl = document.getElementById('copyStamp');
