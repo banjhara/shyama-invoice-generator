@@ -64,6 +64,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .inv-header .logo-img { max-width: 200px; height: auto; display: block; }
 .inv-header .company-title { font-size: 1.3rem; font-weight: 700; color: var(--brand-blue); letter-spacing: 0.5px; margin-bottom: 0.2rem; }
 .inv-header .gst-text { font-size: 0.75rem; color: #555; }
+  #copyStamp { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .inv-address { font-size: 0.72rem; color: #333; line-height: 1.5; text-align: center; margin-top: 0.4rem; }
 .inv-address strong { color: var(--brand-blue-dark); }
 .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 0.8rem; font-size: 0.78rem; }
@@ -137,7 +138,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="header-actions">
   <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
   <button class="btn btn-primary" onclick="saveToSheet()" style="background:#34a853;">Save to Sheet</button>
-  <button class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
+  <button class="btn btn-primary" onclick="downloadPDF('original')">Original</button>
+  <button class="btn btn-primary" onclick="downloadPDF('duplicate')">Duplicate</button>
+  <button class="btn btn-primary" onclick="downloadPDF('supplier')">Supplier Copy</button>
 </div>
 </header>
 <div class="app-container">
@@ -415,6 +418,7 @@ function updatePreview() {
         <div class="inv-header-left">
           <div class="company-title">${COMPANY.name}</div>
           <div class="gst-text">GSTIN: ${COMPANY.gst}</div>
+          <div id="copyStamp" style="margin-top:0.4rem;font-size:0.75rem;font-weight:700;color:#c53030;border:2px solid #c53030;padding:0.15rem 0.5rem;display:inline-block;border-radius:4px;letter-spacing:0.5px;"></div>
         </div>
         <div class="inv-header-right">
           <img src="${LOGO_PATH}" class="logo-img" alt="Shyama Enterprises" onerror="this.style.display='none'">
@@ -426,6 +430,9 @@ function updatePreview() {
         <strong>MOB. NO.</strong> ${COMPANY.mobile}
       </div>
     </div>
+      // Set copy stamp if any
+  const stampEl = document.getElementById('copyStamp');
+  if (stampEl) stampEl.style.display = 'none';
     <table class="meta-table">
             <tr>
         <td class="label" rowspan="2"><strong>BILLED TO</strong></td>
@@ -600,7 +607,18 @@ function saveToSheet() {
   }, 1500);
 }
 
-function downloadPDF() {
+function downloadPDF(copyType) {
+  const stampText = {
+    original: 'TAX INVOICE — ORIGINAL',
+    duplicate: 'TAX INVOICE — DUPLICATE',
+    supplier: 'TAX INVOICE — SUPPLIER COPY'
+  }[copyType] || '';
+  
+  const stampEl = document.getElementById('copyStamp');
+  if (stampEl) {
+    stampEl.textContent = stampText;
+    stampEl.style.display = 'inline-block';
+  }
   const printWindow = window.open('', '_blank');
   const invoiceContent = document.getElementById('invoicePreview').innerHTML;
   printWindow.document.write(`
@@ -682,6 +700,14 @@ function downloadPDF() {
     </html>
   `);
   printWindow.document.close();
+    // Reset stamp after a delay
+  setTimeout(() => {
+    if (stampEl) {
+      stampEl.textContent = '';
+      stampEl.style.display = 'none';
+    }
+  }, 1000);
+}
 }
 function resetForm() {
   if (!confirm('Reset all fields? This will clear all entered data.')) return;
