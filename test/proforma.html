@@ -587,7 +587,8 @@ function saveToSheet() {
     custAddress: document.getElementById('custAddress').value,
     challanDate: document.getElementById('challanDate').value,
     poDate: document.getElementById('poDate').value,
-    customTerms: document.getElementById('customTerms').value
+    customTerms: document.getElementById('customTerms').value,
+    status: 'Pending'
   };
   
   for (const [key, value] of Object.entries(fields)) {
