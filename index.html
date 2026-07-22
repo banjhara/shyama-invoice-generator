@@ -429,8 +429,6 @@ function updatePreview() {
         <strong>SHIPPING ADDRESS:</strong> ${COMPANY.shipping}<br>
         <strong>MOB. NO.</strong> ${COMPANY.mobile}
       </div>
-  const stampEl = document.getElementById('copyStamp');
-  if (stampEl) stampEl.style.display = 'none';
     </div>
     <table class="meta-table">
             <tr>
@@ -508,6 +506,8 @@ function updatePreview() {
       </div>
     </div>
   `;
+  const stampEl = document.getElementById('copyStamp');
+  if (stampEl) stampEl.style.display = 'none';
 }
 // Add this constant at the top of your <script> section (with other constants):
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwBPsQ2gZDDLxe8XYmYDXn4Q_ggFIzvaQwXnoWcQKpzZk9UspfV-MeimxtfxNVBvKvryg/exec";
