@@ -575,7 +575,7 @@ function saveToSheet() {
     custName: custName,
     custGST: document.getElementById('custGST').value,
     invDate: document.getElementById('invDate').value,
-    challanNo: document.getElementById('challanNo').value,
+    challanNo: '',
     poNo: document.getElementById('poNo').value,
     transport: document.getElementById('transport').value,
     subTotal: subTotal.toFixed(2),
@@ -585,7 +585,7 @@ function saveToSheet() {
     grandTotal: grandTotal.toFixed(2),
     items: itemsText,
     custAddress: document.getElementById('custAddress').value,
-    challanDate: document.getElementById('challanDate').value,
+    challanDate: '',
     poDate: document.getElementById('poDate').value,
     customTerms: document.getElementById('customTerms').value,
     status: 'Pending'
