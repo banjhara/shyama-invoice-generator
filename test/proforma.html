@@ -373,24 +373,29 @@ function updatePreview() {
   const custGST = document.getElementById('custGST').value;
   const invNo = document.getElementById('invNo').value;
   const invDate = document.getElementById('invDate').value;
-  const challanNo = document.getElementById('challanNo').value;
-  const challanDate = document.getElementById('challanDate').value;
   const poNo = document.getElementById('poNo').value;
   const poDate = document.getElementById('poDate').value;
   const transport = document.getElementById('transport').value;
+  const placeOfSupply = document.getElementById('placeOfSupply').value;
+  const advancePercent = parseFloat(document.getElementById('advancePercent').value) || 0;
+  const quotationRef = document.getElementById('quotationRef').value;
   const packingCharges = parseFloat(document.getElementById('packingCharges').value) || 0;
   const transportCharges = parseFloat(document.getElementById('transportCharges').value) || 0;
   const taxType = document.getElementById('taxType').value;
   const gstRate = parseFloat(document.getElementById('gstRate').value) || 18;
   const customTerms = document.getElementById('customTerms').value;
+
   let subTotal = 0;
   lineItems.forEach(item => { subTotal += item.qty * item.rate; });
-  subTotal += packingCharges + transportCharges;
-  const taxAmount = subTotal * (gstRate / 100);
+
+  const taxableAmt = subTotal + packingCharges + transportCharges;
+  const taxAmount = taxableAmt * (gstRate / 100);
   let igst = 0, cgst = 0, sgst = 0;
   if (taxType === 'igst') { igst = taxAmount; }
   else { cgst = taxAmount / 2; sgst = taxAmount / 2; }
-  const grandTotal = subTotal + taxAmount;
+  const grandTotal = taxableAmt + taxAmount;
+  const advanceAmt = grandTotal * (advancePercent / 100);
+
   let itemsHTML = '';
   lineItems.forEach((item, idx) => {
     const amt = item.qty * item.rate;
@@ -409,12 +414,7 @@ function updatePreview() {
   for (let i = 0; i < emptyRows; i++) {
     itemsHTML += `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
   }
-  if (packingCharges > 0) {
-    itemsHTML += `<tr><td></td><td>Packing & Forwarding Charges</td><td></td><td></td><td></td><td class="amt-col">${fmt(packingCharges)}</td></tr>`;
-  }
-  if (transportCharges > 0) {
-    itemsHTML += `<tr><td></td><td>Transport / Freight Charges</td><td></td><td></td><td></td><td class="amt-col">${fmt(transportCharges)}</td></tr>`;
-  }
+
   let taxRowsHTML = '';
   if (taxType === 'igst') {
     taxRowsHTML = `<tr><td class="label-cell">IGST @ ${gstRate}%</td><td class="value-cell">${fmt(igst)}</td></tr>`;
@@ -424,7 +424,9 @@ function updatePreview() {
       <tr><td class="label-cell">SGST @ ${gstRate/2}%</td><td class="value-cell">${fmt(sgst)}</td></tr>
     `;
   }
+
   const termsList = customTerms.split('\n').filter(t => t.trim()).map(t => `<li>${t.trim()}</li>`).join('');
+
   const preview = document.getElementById('invoicePreview');
   preview.innerHTML = `
     <div class="inv-header">
@@ -432,7 +434,7 @@ function updatePreview() {
         <div class="inv-header-left">
           <div class="company-title">${COMPANY.name}</div>
           <div class="gst-text">GSTIN: ${COMPANY.gst}</div>
-          <div id="copyStamp" style="margin-top:0.4rem;font-size:0.75rem;font-weight:700;color:#c53030;border:2px solid #c53030;padding:0.15rem 0.5rem;display:inline-block;border-radius:4px;letter-spacing:0.5px;"></div>
+          <div style="margin-top:0.4rem;font-size:0.75rem;font-weight:700;color:#c53030;border:2px solid #c53030;padding:0.15rem 0.5rem;display:inline-block;border-radius:4px;letter-spacing:0.5px;">PROFORMA INVOICE</div>
         </div>
         <div class="inv-header-right">
           <img src="${LOGO_PATH}" class="logo-img" alt="Shyama Enterprises" onerror="this.style.display='none'">
@@ -445,35 +447,31 @@ function updatePreview() {
       </div>
     </div>
     <table class="meta-table">
-            <tr>
-        <td class="label" rowspan="2"><strong>BILLED TO</strong></td>
-        <td class="value" rowspan="2">
+      <tr>
+        <td class="label"><strong>BILLED TO</strong></td>
+        <td class="value">
           <strong>${custName || '_______________________'}</strong><br>
           ${custAddress || ''}<br>
           ${custGST ? `<strong>GST:</strong> ${custGST}` : ''}
         </td>
-        <td class="label"><strong>TAX INVOICE</strong></td>
-        <td class="value"><strong>${invNo || 'SE/____/___'}</strong></td>
+        <td class="label"><strong>PROFORMA INVOICE</strong></td>
+        <td class="value"><strong>${invNo || 'PI/____/___'}</strong></td>
       </tr>
       <tr>
+        <td class="label">Place of Supply</td>
+        <td class="value">${placeOfSupply || ''}</td>
         <td class="label">Dated</td>
         <td class="value">${fmtDate(invDate)}</td>
       </tr>
       <tr>
-        <td class="label">SE Challan no.</td>
-        <td class="value">${challanNo || ''}</td>
-        <td class="label">Dated</td>
-        <td class="value">${fmtDate(challanDate)}</td>
-      </tr>
-      <tr>
-        <td class="label">P.O. No.</td>
+        <td class="label">Customer P.O. No.</td>
         <td class="value">${poNo || ''}</td>
         <td class="label">Dated</td>
         <td class="value">${fmtDate(poDate)}</td>
       </tr>
       <tr>
-        <td class="label">Shyama Ent GST No.</td>
-        <td class="value">${COMPANY.gst}</td>
+        <td class="label">Quotation Ref</td>
+        <td class="value">${quotationRef || ''}</td>
         <td class="label">Dispatch By</td>
         <td class="value">${transport || ''}</td>
       </tr>
@@ -494,11 +492,18 @@ function updatePreview() {
     </table>
     <table class="totals-table">
       <tr><td class="label-cell">Sub Total</td><td class="value-cell">${fmt(subTotal)}</td></tr>
+      ${packingCharges > 0 ? `<tr><td class="label-cell">Packing & Forwarding</td><td class="value-cell">${fmt(packingCharges)}</td></tr>` : ''}
+      ${transportCharges > 0 ? `<tr><td class="label-cell">Freight (As actual)</td><td class="value-cell">${fmt(transportCharges)}</td></tr>` : ''}
+      <tr><td class="label-cell">Total Taxable Amount</td><td class="value-cell">${fmt(taxableAmt)}</td></tr>
       ${taxRowsHTML}
-      <tr class="grand-total"><td class="label-cell">Grand Total with GST</td><td class="value-cell">${fmt(grandTotal)}</td></tr>
+      <tr class="grand-total"><td class="label-cell">Gross Amount</td><td class="value-cell">${fmt(grandTotal)}</td></tr>
     </table>
     <div class="amount-words">
-      <strong>TOTAL AMOUNT:</strong> ${numberToWords(grandTotal)}.
+      <strong>GROSS AMOUNT:</strong> ${numberToWords(grandTotal)}.
+    </div>
+    <div style="border:1px solid #333; padding:0.5rem 0.8rem; font-size:0.8rem; margin-bottom:0.8rem; background:#fffbeb;">
+      <strong>Advance Payment — ${advancePercent}%</strong><br>
+      INR ${fmt(advanceAmt)} to be paid in advance as per quotation ${quotationRef || ' dated ____________'}
     </div>
     <div class="terms-section">
       <div class="terms-header">Terms and Conditions</div>
@@ -520,8 +525,6 @@ function updatePreview() {
       </div>
     </div>
   `;
-  const stampEl = document.getElementById('copyStamp');
-  if (stampEl) stampEl.style.display = 'none';
 }
 // Add this constant at the top of your <script> section (with other constants):
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwBPsQ2gZDDLxe8XYmYDXn4Q_ggFIzvaQwXnoWcQKpzZk9UspfV-MeimxtfxNVBvKvryg/exec";
