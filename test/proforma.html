@@ -163,47 +163,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <input type="text" id="custGST" placeholder="27XXXXXXXXX1Z5" oninput="updatePreview()">
       </div>
     </div>
-    <div class="form-section">
-      <div class="section-title">Invoice Info</div>
-     <div class="form-row">
-  <div class="form-group">
-    <label>Invoice No. *</label>
-    <input type="text" id="invNo" placeholder="SE/26-27/001" oninput="updatePreview()">
-  </div>
-  <div class="form-group">
-    <label style="visibility:hidden;">Load</label>
-    <button class="btn btn-outline btn-sm" onclick="loadInvoice()" style="width:100%;">Load Invoice</button>
-  </div>
-</div>
-        <div class="form-group">
-          <label>Invoice Date *</label>
-          <input type="date" id="invDate" oninput="updatePreview()">
-        </div>
-      </div>
-    <div class="form-section">
-      <div class="section-title">Proforma Details</div>
-      <div class="form-group">
-        <label>Place of Supply</label>
-        <input type="text" id="placeOfSupply" placeholder="e.g. Maharashtra" oninput="updatePreview()">
-      </div>
-      <div class="form-group">
-        <label>Advance Payment (%)</label>
-        <input type="number" id="advancePercent" value="50" min="0" max="100" oninput="updatePreview()">
-      </div>
-      <div class="form-group">
-        <label>Quotation Ref / Date</label>
-        <input type="text" id="quotationRef" placeholder="e.g. QT/26-27/001 dated 15 Jul 2026" oninput="updatePreview()">
-      </div>
-    </div>
+        <div class="form-section">
+      <div class="section-title">Proforma Info</div>
       <div class="form-row">
         <div class="form-group">
-          <label>Challan No.</label>
-          <input type="text" id="challanNo" placeholder="DC/SE/00" oninput="updatePreview()">
+          <label>Proforma No. *</label>
+          <input type="text" id="invNo" placeholder="PI/26-27/001" oninput="updatePreview()">
         </div>
         <div class="form-group">
-          <label>Challan Date</label>
-          <input type="date" id="challanDate" oninput="updatePreview()">
+          <label style="visibility:hidden;">Load</label>
+          <button class="btn btn-outline btn-sm" onclick="loadInvoice()" style="width:100%;">Load Proforma</button>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Proforma Date *</label>
+        <input type="date" id="invDate" oninput="updatePreview()">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -219,6 +193,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <label>Transport / Courier</label>
         <input type="text" id="transport" placeholder="e.g. VRL Logistics" oninput="updatePreview()">
       </div>
+      <div class="form-group">
+        <label>Place of Supply</label>
+        <input type="text" id="placeOfSupply" placeholder="e.g. Maharashtra" oninput="updatePreview()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Advance Payment (%)</label>
+          <input type="number" id="advancePercent" value="50" min="0" max="100" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+          <label>Quotation Ref / Date</label>
+          <input type="text" id="quotationRef" placeholder="e.g. QT/26-27/001 dated 15 Jul 2026" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
     <div class="form-section">
       <div class="section-title">Products / Services</div>
       <div class="line-items-container" id="lineItemsContainer"></div>
