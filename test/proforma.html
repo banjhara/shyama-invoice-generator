@@ -607,7 +607,18 @@ function convertToInvoice() {
     return;
   }
   
-  // Build URL with all form data as query params
+  const pass = prompt("Enter password to convert:");
+  if (pass !== "shyama2026") {
+    showToast("Wrong password");
+    return;
+  }
+  
+  // Build URL for tax invoice page — go UP from test/ to root, then to test/index.html
+  const currentPath = window.location.pathname; // e.g. /shyama-invoice-generator/test/proforma.html
+  const repoRoot = currentPath.substring(0, currentPath.lastIndexOf('/test/') + 1); // e.g. /shyama-invoice-generator/
+  const taxInvoiceUrl = window.location.origin + repoRoot + 'test/index.html';
+  
+  // Build query params with all form data
   const params = new URLSearchParams();
   params.set('mode', 'convert');
   params.set('from', 'proforma');
@@ -616,17 +627,14 @@ function convertToInvoice() {
   params.set('custAddress', document.getElementById('custAddress').value);
   params.set('custGST', document.getElementById('custGST').value);
   params.set('invDate', document.getElementById('invDate').value);
-  params.set('challanNo', '');
-  params.set('challanDate', '');
   params.set('poNo', document.getElementById('poNo').value);
   params.set('poDate', document.getElementById('poDate').value);
   params.set('transport', document.getElementById('transport').value);
   params.set('taxType', document.getElementById('taxType').value);
-  params.set('gstRate', document.getElementById('gstRate').value);
+  params.set('gstRate', document.getElementById('gstRate').value || '18');
   params.set('customTerms', document.getElementById('customTerms').value);
-  params.set('placeOfSupply', document.getElementById('placeOfSupply').value);
-  params.set('advancePercent', document.getElementById('advancePercent').value);
-  params.set('quotationRef', document.getElementById('quotationRef').value);
+  params.set('packingCharges', document.getElementById('packingCharges').value || '0');
+  params.set('transportCharges', document.getElementById('transportCharges').value || '0');
   
   // Add line items as JSON
   const itemsJson = JSON.stringify(lineItems.map(i => ({
@@ -634,23 +642,28 @@ function convertToInvoice() {
   })));
   params.set('items', itemsJson);
   
-  // Also mark this proforma as converted
-  const pass = prompt("Enter password to convert:");
-  if (pass !== "shyama2026") {
-    showToast("Wrong password");
-    return;
-  }
+  // Open tax invoice in new tab FIRST (before async fetch)
+  const fullUrl = taxInvoiceUrl + '?' + params.toString();
+  console.log('Opening:', fullUrl); // for debugging
+  window.open(fullUrl, '_blank');
   
-  // Open tax invoice page with data
-  const baseUrl = window.location.href.replace('/test/proforma.html', '/test/index.html').replace('/proforma.html', '/index.html');
-  window.open(baseUrl + '?' + params.toString(), '_blank');
+  // Then mark proforma as converted
+  showToast("Marking proforma as converted...");
   
-  // Update proforma status to converted
   fetch(SHEET_API_URL + '?action=markConverted&pfNo=' + encodeURIComponent(invNo) + '&pass=' + encodeURIComponent(pass) + '&sheet=' + SHEET_NAME)
-    .then(() => showToast("Proforma marked as converted. Opened Tax Invoice in new tab."))
-    .catch(err => console.error(err));
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        showToast("Proforma marked as converted.");
+      } else {
+        showToast("Error: " + (data.message || 'Unknown'));
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast("Failed to mark as converted.");
+    });
 }
-
 function downloadPDF(copyType) {
   const stampText = {
     original: 'TAX INVOICE — ORIGINAL',
