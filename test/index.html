@@ -271,14 +271,19 @@ const LOGO_PATH = "logo.png";
 let lineItems = [];
 let itemCounter = 0;
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOMContentLoaded fired');
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('invDate').value = today;
   
   // Check if opened from Proforma conversion
   const urlParams = new URLSearchParams(window.location.search);
+  console.log('mode:', urlParams.get('mode'), 'from:', urlParams.get('from'));
+  
   if (urlParams.get('mode') === 'convert' && urlParams.get('from') === 'proforma') {
+    console.log('Calling fillFromProforma...');
     fillFromProforma(urlParams);
   } else {
+    console.log('Normal load, adding item...');
     addLineItem();
     updatePreview();
   }
