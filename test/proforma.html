@@ -135,6 +135,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <body>
 <header class="app-header">
   <h1><span class="logo-icon">SE</span> Shyama Enterprises - Proforma Invoice</h1>
+  <div style="display:flex;gap:1rem;margin-left:auto;margin-right:1.5rem;">
+    <a href="index.html" style="color:white;text-decoration:none;font-size:0.85rem;opacity:0.6;font-weight:500;">Tax Invoice</a>
+    <a href="proforma.html" style="color:white;text-decoration:none;font-size:0.85rem;opacity:0.9;font-weight:500;">Proforma</a>
+  </div>
   <div class="header-actions">
   <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
   <button class="btn btn-primary" onclick="saveToSheet()" style="background:#34a853;">Save Proforma</button>
@@ -613,10 +617,8 @@ function convertToInvoice() {
     return;
   }
   
-  // Build URL for tax invoice page — go UP from test/ to root, then to test/index.html
-  const currentPath = window.location.pathname; // e.g. /shyama-invoice-generator/test/proforma.html
-  const repoRoot = currentPath.substring(0, currentPath.lastIndexOf('/test/') + 1); // e.g. /shyama-invoice-generator/
-  const taxInvoiceUrl = window.location.origin + repoRoot + 'test/index.html';
+  
+  const taxInvoiceUrl = window.location.href.replace(/proforma\.html.*/, 'index.html');
   
   // Build query params with all form data
   const params = new URLSearchParams();
