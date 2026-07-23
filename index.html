@@ -135,12 +135,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <body>
 <header class="app-header">
   <h1><span class="logo-icon">SE</span> Shyama Enterprises — Invoice Generator</h1>
+  <div style="display:flex;gap:1rem;margin-left:auto;margin-right:1.5rem;">
+    <a href="index.html" style="color:white;text-decoration:none;font-size:0.85rem;opacity:0.9;font-weight:500;">Tax Invoice</a>
+    <a href="proforma.html" style="color:white;text-decoration:none;font-size:0.85rem;opacity:0.6;font-weight:500;">Proforma</a>
+  </div>
   <div class="header-actions">
   <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
   <button class="btn btn-primary" onclick="saveToSheet()" style="background:#34a853;">Save to Sheet</button>
   <button class="btn btn-primary" onclick="downloadPDF('original')">Original</button>
   <button class="btn btn-primary" onclick="downloadPDF('duplicate')">Duplicate</button>
   <button class="btn btn-primary" onclick="downloadPDF('triplicate')">Triplicate</button>
+  <button class="btn btn-outline" onclick="downloadChallan()" style="border-color:var(--accent);color:var(--accent);">Download Challan</button>
 </div>
 </header>
 <div class="app-container">
@@ -257,6 +262,8 @@ Material supplied to order will not be accepted back.</textarea>
 </div>
 <div class="toast" id="toast">Invoice updated!</div>
 <script>
+console.log('Page loaded. URL:', window.location.href);
+console.log('Search params:', window.location.search);
 const COMPANY = {
   name: "SHYAMA ENTERPRISES",
   office: "T. G. 8 1/3, VEER SHAMBHAJI NAGAR, L. B. S. MARG, MULUND WEST, MUMBAI, MAHARASHTRA — 400 080",
@@ -269,10 +276,22 @@ const LOGO_PATH = "logo.png";
 let lineItems = [];
 let itemCounter = 0;
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOMContentLoaded fired');
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('invDate').value = today;
-  addLineItem();
-  updatePreview();
+  
+  // Check if opened from Proforma conversion
+  const urlParams = new URLSearchParams(window.location.search);
+  console.log('mode:', urlParams.get('mode'), 'from:', urlParams.get('from'));
+  
+  if (urlParams.get('mode') === 'convert' && urlParams.get('from') === 'proforma') {
+    console.log('Calling fillFromProforma...');
+    fillFromProforma(urlParams);
+  } else {
+    console.log('Normal load, adding item...');
+    addLineItem();
+    updatePreview();
+  }
 });
 function addLineItem() {
   itemCounter++;
@@ -512,6 +531,76 @@ function updatePreview() {
 // Add this constant at the top of your <script> section (with other constants):
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwBPsQ2gZDDLxe8XYmYDXn4Q_ggFIzvaQwXnoWcQKpzZk9UspfV-MeimxtfxNVBvKvryg/exec";
 
+function fillFromProforma(params) {
+  // Fill customer details
+  document.getElementById('custName').value = params.get('custName') || '';
+  document.getElementById('custAddress').value = params.get('custAddress') || '';
+  document.getElementById('custGST').value = params.get('custGST') || '';
+  
+  // Invoice date from proforma date
+  document.getElementById('invDate').value = params.get('invDate') || new Date().toISOString().split('T')[0];
+  
+  // PO details
+  document.getElementById('poNo').value = params.get('poNo') || '';
+  document.getElementById('poDate').value = params.get('poDate') || '';
+  
+  // Transport
+  document.getElementById('transport').value = params.get('transport') || '';
+  
+  // Tax config
+  document.getElementById('taxType').value = params.get('taxType') || 'igst';
+  document.getElementById('gstRate').value = params.get('gstRate') || '18';
+  
+  // Terms
+  document.getElementById('customTerms').value = params.get('customTerms') || '';
+  
+  // Charges
+  document.getElementById('packingCharges').value = params.get('packingCharges') || '0';
+  document.getElementById('transportCharges').value = params.get('transportCharges') || '0';
+  
+  // Line items
+  const itemsJson = params.get('items');
+  if (itemsJson) {
+    try {
+      const items = JSON.parse(itemsJson);
+      lineItems = [];
+      itemCounter = 0;
+      document.getElementById('lineItemsContainer').innerHTML = '';
+      
+      items.forEach((item, idx) => {
+        itemCounter++;
+        const id = itemCounter;
+        lineItems.push({
+          id: id,
+          desc: item.desc || '',
+          hsn: item.hsn || '',
+          qty: item.qty || 1,
+          rate: item.rate || 0
+        });
+        renderLineItemForm(id);
+        document.getElementById(`desc-${id}`).value = item.desc || '';
+        document.getElementById(`hsn-${id}`).value = item.hsn || '';
+        document.getElementById(`qty-${id}`).value = item.qty || 1;
+        document.getElementById(`rate-${id}`).value = item.rate || 0;
+      });
+    } catch (e) {
+      console.error('Failed to parse items:', e);
+      addLineItem();
+    }
+  } else {
+    addLineItem();
+  }
+  
+  // Show banner indicating this came from proforma
+  const pfNo = params.get('pfNo');
+  if (pfNo) {
+    showToast('Loaded from Proforma: ' + pfNo);
+  }
+  
+  requestAnimationFrame(() => {
+    setTimeout(updatePreview, 300);
+  });
+}  
 function saveToSheet() {
   const custName = document.getElementById('custName').value;
   const invNo = document.getElementById('invNo').value;
@@ -694,6 +783,152 @@ function downloadPDF(copyType) {
       stampEl.style.display = 'none';
     }
   }, 1000);
+}
+
+  function downloadChallan() {
+  const printWindow = window.open('', '_blank');
+  
+  const custName = document.getElementById('custName').value;
+  const custAddress = document.getElementById('custAddress').value.replace(/\n/g, '<br>');
+  const custGST = document.getElementById('custGST').value;
+  const invNo = document.getElementById('invNo').value;
+  const invDate = document.getElementById('invDate').value;
+  const challanNo = document.getElementById('challanNo').value;
+  const challanDate = document.getElementById('challanDate').value;
+  const poNo = document.getElementById('poNo').value;
+  const poDate = document.getElementById('poDate').value;
+  const transport = document.getElementById('transport').value;
+  
+  let itemsHTML = '';
+  let totalQty = 0;
+  lineItems.forEach((item, idx) => {
+    totalQty += item.qty;
+    itemsHTML += `
+      <tr>
+        <td style="border:1px solid #333;padding:0.4rem 0.5rem;">${String(idx + 1).padStart(2, '0')}</td>
+        <td style="border:1px solid #333;padding:0.4rem 0.5rem;">${item.desc || '&nbsp;'}</td>
+        <td style="border:1px solid #333;padding:0.4rem 0.5rem;text-align:center;">${item.hsn || '&nbsp;'}</td>
+        <td style="border:1px solid #333;padding:0.4rem 0.5rem;text-align:center;">${item.qty}</td>
+      </tr>
+    `;
+  });
+  
+  // Add empty rows to fill space
+  const emptyRows = Math.max(0, 8 - lineItems.length);
+  for (let i = 0; i < emptyRows; i++) {
+    itemsHTML += `<tr><td style="border:1px solid #333;padding:0.4rem 0.5rem;">&nbsp;</td><td style="border:1px solid #333;padding:0.4rem 0.5rem;">&nbsp;</td><td style="border:1px solid #333;padding:0.4rem 0.5rem;">&nbsp;</td><td style="border:1px solid #333;padding:0.4rem 0.5rem;">&nbsp;</td></tr>`;
+  }
+  
+  const challanContent = `
+    <div style="font-family:'Inter',sans-serif;font-size:11pt;line-height:1.4;padding:10mm;">
+      <div style="border-bottom:2.5px solid #0052D4;padding-bottom:0.6rem;margin-bottom:0.8rem;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.5rem;">
+          <div style="flex:1;">
+            <div style="font-size:1.3rem;font-weight:700;color:#0052D4;letter-spacing:0.5px;margin-bottom:0.2rem;">${COMPANY.name}</div>
+            <div style="font-size:0.75rem;color:#555;">GSTIN: ${COMPANY.gst}</div>
+          </div>
+          <div style="text-align:right;">
+            <img src="${LOGO_PATH}" style="max-width:200px;height:auto;display:block;" alt="Shyama Enterprises" onerror="this.style.display='none'">
+          </div>
+        </div>
+        <div style="font-size:0.72rem;color:#333;line-height:1.5;text-align:center;margin-top:0.4rem;">
+          <strong>OFFICE:</strong> ${COMPANY.office}<br>
+          <strong>SHIPPING ADDRESS:</strong> ${COMPANY.shipping}<br>
+          <strong>MOB. NO.</strong> ${COMPANY.mobile}
+        </div>
+      </div>
+      
+      <table style="width:100%;border-collapse:collapse;margin-bottom:0.8rem;font-size:0.78rem;">
+        <tr>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;font-weight:600;background:#e6f0ff;color:#003d9e;width:18%;"><strong>BILLED TO</strong></td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;width:32%;">
+            <strong>${custName || '_______________________'}</strong><br>
+            ${custAddress || ''}<br>
+            ${custGST ? `<strong>GST:</strong> ${custGST}` : ''}
+          </td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;font-weight:600;background:#e6f0ff;color:#003d9e;width:18%;"><strong>DELIVERY CHALLAN</strong></td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;width:32%;">
+            <strong>SE Challan No.:</strong> ${challanNo || 'DC/SE/___'}<br>
+            <strong>Dated:</strong> ${fmtDate(challanDate) || fmtDate(invDate)}<br>
+            <strong>P.O. No.:</strong> ${poNo || ''}<br>
+            <strong>Dated:</strong> ${fmtDate(poDate) || ''}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;font-weight:600;background:#e6f0ff;">Shyama Ent GST No.</td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;">${COMPANY.gst}</td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;font-weight:600;background:#e6f0ff;">Dispatch By</td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;">${transport || ''}</td>
+        </tr>
+      </table>
+      
+      <p style="font-weight:600;font-size:0.85rem;margin-bottom:0.4rem;">Products Details as below.</p>
+      
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:0.8rem;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #333;padding:0.4rem 0.5rem;background:#e6f0ff;color:#003d9e;font-weight:600;text-align:center;width:8%;">SR.<br>No.</th>
+            <th style="border:1px solid #333;padding:0.4rem 0.5rem;background:#e6f0ff;color:#003d9e;font-weight:600;text-align:center;width:52%;">Spares Description</th>
+            <th style="border:1px solid #333;padding:0.4rem 0.5rem;background:#e6f0ff;color:#003d9e;font-weight:600;text-align:center;width:20%;">HSN / SAC<br>Code</th>
+            <th style="border:1px solid #333;padding:0.4rem 0.5rem;background:#e6f0ff;color:#003d9e;font-weight:600;text-align:center;width:20%;">Qty.</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHTML}</tbody>
+      </table>
+      
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:0.8rem;">
+        <tr>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;font-weight:600;text-align:right;width:80%;">Total Nos.</td>
+          <td style="border:1px solid #333;padding:0.35rem 0.6rem;text-align:center;font-weight:600;width:20%;">${totalQty}</td>
+        </tr>
+      </table>
+      
+      <div style="border:1px solid #333;padding:0.5rem 0.8rem;font-size:0.8rem;margin-bottom:0.8rem;">
+        <p><strong>GST Registration No.:</strong> ${COMPANY.gst}</p>
+        <p><strong>PAN No.:</strong> AEBPJ2563A</p>
+        <p><strong>ARN No.:</strong> AA270424018502K</p>
+        <p><strong>Material Delivery:</strong> ${transport || '_______________________'}</p>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+        <div style="border:1px solid #333;padding:0.6rem;font-size:0.75rem;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;">
+          <div style="font-weight:700;color:#0052D4;font-size:0.85rem;">For ${COMPANY.name}</div>
+          <div style="border-top:1px solid #333;margin-top:auto;padding-top:0.3rem;font-size:0.75rem;font-weight:600;text-align:center;">Authorised Signatory</div>
+        </div>
+        <div style="border:1px solid #333;padding:0.6rem;font-size:0.75rem;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;">
+          <div style="font-weight:700;color:#0052D4;font-size:0.85rem;">Receiver's Signature & Date</div>
+          <div style="border-top:1px solid #333;margin-top:auto;padding-top:0.3rem;font-size:0.75rem;font-weight:600;text-align:center;">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Delivery Challan - ${challanNo || 'Shyama Enterprises'}</title>
+      <style>
+        body { margin: 0; padding: 0; background: white; }
+        @media print {
+          body { margin: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      ${challanContent}
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 300);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 function resetForm() {
   if (!confirm('Reset all fields? This will clear all entered data.')) return;
