@@ -271,8 +271,15 @@ let itemCounter = 0;
 document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('invDate').value = today;
-  addLineItem();
-  updatePreview();
+  
+  // Check if opened from Proforma conversion
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'convert' && urlParams.get('from') === 'proforma') {
+    fillFromProforma(urlParams);
+  } else {
+    addLineItem();
+    updatePreview();
+  }
 });
 function addLineItem() {
   itemCounter++;
@@ -512,6 +519,76 @@ function updatePreview() {
 // Add this constant at the top of your <script> section (with other constants):
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwBPsQ2gZDDLxe8XYmYDXn4Q_ggFIzvaQwXnoWcQKpzZk9UspfV-MeimxtfxNVBvKvryg/exec";
 
+function fillFromProforma(params) {
+  // Fill customer details
+  document.getElementById('custName').value = params.get('custName') || '';
+  document.getElementById('custAddress').value = params.get('custAddress') || '';
+  document.getElementById('custGST').value = params.get('custGST') || '';
+  
+  // Invoice date from proforma date
+  document.getElementById('invDate').value = params.get('invDate') || new Date().toISOString().split('T')[0];
+  
+  // PO details
+  document.getElementById('poNo').value = params.get('poNo') || '';
+  document.getElementById('poDate').value = params.get('poDate') || '';
+  
+  // Transport
+  document.getElementById('transport').value = params.get('transport') || '';
+  
+  // Tax config
+  document.getElementById('taxType').value = params.get('taxType') || 'igst';
+  document.getElementById('gstRate').value = params.get('gstRate') || '18';
+  
+  // Terms
+  document.getElementById('customTerms').value = params.get('customTerms') || '';
+  
+  // Charges
+  document.getElementById('packingCharges').value = params.get('packingCharges') || '0';
+  document.getElementById('transportCharges').value = params.get('transportCharges') || '0';
+  
+  // Line items
+  const itemsJson = params.get('items');
+  if (itemsJson) {
+    try {
+      const items = JSON.parse(itemsJson);
+      lineItems = [];
+      itemCounter = 0;
+      document.getElementById('lineItemsContainer').innerHTML = '';
+      
+      items.forEach((item, idx) => {
+        itemCounter++;
+        const id = itemCounter;
+        lineItems.push({
+          id: id,
+          desc: item.desc || '',
+          hsn: item.hsn || '',
+          qty: item.qty || 1,
+          rate: item.rate || 0
+        });
+        renderLineItemForm(id);
+        document.getElementById(`desc-${id}`).value = item.desc || '';
+        document.getElementById(`hsn-${id}`).value = item.hsn || '';
+        document.getElementById(`qty-${id}`).value = item.qty || 1;
+        document.getElementById(`rate-${id}`).value = item.rate || 0;
+      });
+    } catch (e) {
+      console.error('Failed to parse items:', e);
+      addLineItem();
+    }
+  } else {
+    addLineItem();
+  }
+  
+  // Show banner indicating this came from proforma
+  const pfNo = params.get('pfNo');
+  if (pfNo) {
+    showToast('Loaded from Proforma: ' + pfNo);
+  }
+  
+  requestAnimationFrame(() => {
+    setTimeout(updatePreview, 300);
+  });
+}  
 function saveToSheet() {
   const custName = document.getElementById('custName').value;
   const invNo = document.getElementById('invNo').value;
